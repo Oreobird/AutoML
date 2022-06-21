@@ -6,7 +6,7 @@
 import os
 import numpy as np
 from sklearn import model_selection
-from mlxtend.classifier import StackingClassifier
+from sklearn.ensemble import StackingClassifier
 from sklearn.model_selection import GridSearchCV
 
 import metric_util as mtutil
@@ -33,22 +33,22 @@ class BaseAutoML:
             print("\t%s: %r" % (param_name, best_parameters[param_name]))
             
             
-    def cvselect_model(self, x_train, y_train, metric_list, model_label_list, K=2, cv=5):
+    def cvselect_model(self, x_train, y_train, metric_list, model_name_list, K=2, cv=5):
         select_models = []
         for metric in metric_list:
             scores = {}
             print("===>[%s]" % metric)
-            for model_label in model_label_list:
-                model = self.model_util.get_model(model_label)
+            for model_name in model_name_list:
+                model = self.model_util.get_model(model_name)
                 score = model_selection.cross_val_score(model, x_train, y_train, cv=cv, scoring=metric)
-                scores[model_label] = score.mean()
-                print("    [%s] Accuracy: %0.2f (+/- %0.2f)" % (model_label, score.mean(), score.std()))
+                scores[model_name] = score.mean()
+                print("    [%s] Accuracy: %0.2f (+/- %0.2f)" % (model_name, score.mean(), score.std()))
             sorted_scores = sorted(scores.items(), key=lambda d:d[1], reverse = True)
-            selected_model_label = sorted_scores[:K]
+            selected_model_name = sorted_scores[:K]
             
-            for i in range(len(selected_model_label)):
-                if not selected_model_label[i][0] in select_models:
-                    select_models.append(selected_model_label[i][0])
+            for i in range(len(selected_model_name)):
+                if not selected_model_name[i][0] in select_models:
+                    select_models.append(selected_model_name[i][0])
         
         self.selected_models = select_models[:K]
         print("Selected models:{}".format(self.selected_models))
@@ -64,41 +64,49 @@ class BaseAutoML:
         return best_model
 
 
-    def tune_models(self, x_train, y_train, model_labels=None, save=True):
+    def tune_models(self, x_train, y_train, model_names=None, save=True):
         best_models = {}
-        for model_label in model_labels:
-            model = self.model_util.get_model(model_label)
-            param_set = self.model_util.get_param_set(model_label)
+        for model_name in model_names:
+            model = self.model_util.get_model(model_name)
+            param_set = self.model_util.get_param_set(model_name)
             best_model = self.model_param_tune(x_train, y_train, model, param_set)
             if save:
-                self.model_util.save_model(best_model, os.path.join(self.model_save_path, model_label + '_model.pkl'))
-            best_models[model_label] = best_model
+                self.model_util.save_model(best_model, os.path.join(self.model_save_path, model_name + '_model.pkl'))
+            best_models[model_name] = best_model
         return best_models
 
 
-    def get_basic_models(self, models):
+    def get_basic_models(self, models_name_list):
         classifiers = []
-        for model in models:
-            model_path = os.path.join(self.model_save_path, model + '_model.pkl')
+        for model_name in models_name_list:
+            model_path = os.path.join(self.model_save_path, model_name + '_model.pkl')
             if not os.path.exists(model_path):
-                classifiers.append(self.model_util.get_model(model))
+                basic_model = self.model_util.get_model(model_name)
             else:
                 basic_model = self.model_util.load_model(model_path)
-                print("Load model:" + model)
-                classifiers.append(basic_model)
+                print("Load model:" + model_name)
+            classifiers.append((model_name, basic_model))
         return classifiers
+
+    def get_models_params(self, models_name_list):
+        params = {}
+        for model_name in models_name_list:
+            model_param = self.model_util.get_param_set(model_name)
+            for k, v in model_param.items():
+                params[model_name + '__' + k] = v
+        return params
     
-    
-    def stacking(self, x_train, y_train, meta_clf_label=None, save=True, name='stack_model.pkl'):
-        meta_clf = self.model_util.get_meta_model(meta_clf_label)
-        meta_param = self.model_util.get_meta_param_set(meta_clf_label)
-        
-        stack_clf = StackingClassifier(classifiers=self.get_basic_models(self.selected_models),
-                                       use_probas=False,
-                                       average_probas=False,
-                                       meta_classifier=meta_clf)
-    
-        self.best_model = self.model_param_tune(x_train, y_train, stack_clf, meta_param)
+    def stacking(self, x_train, y_train, meta_clf_name=None, save=True, name='stack_model.pkl'):
+        if meta_clf_name is None:
+            return
+        meta_clf = self.model_util.get_model(meta_clf_name)
+        stack_clf = StackingClassifier(estimators=self.get_basic_models(self.selected_models),
+                                       final_estimator=meta_clf)
+
+        models_name_list = self.selected_models
+        params = self.get_models_params(models_name_list)
+
+        self.best_model = self.model_param_tune(x_train, y_train, stack_clf, params)
         if save:
             self.model_util.save_model(self.best_model, os.path.join(self.model_save_path, name))
         return self.best_model
@@ -111,10 +119,10 @@ class BaseAutoML:
     
 
 class AutoML(BaseAutoML):
-    def train(self, x_train, y_train, metric_list, model_label_list, meta_model_label, model_save_name, K=2):
-        selected_models = super().cvselect_model(x_train, y_train, metric_list, model_label_list, K=K)
+    def train(self, x_train, y_train, metric_list, model_name_list, meta_model_name, model_save_name, K=2):
+        selected_models = super().cvselect_model(x_train, y_train, metric_list, model_name_list, K=K)
         super().tune_models(x_train, y_train, selected_models)
-        return super().stacking(x_train, y_train, meta_model_label, name=model_save_name)
+        return super().stacking(x_train, y_train, meta_model_name, name=model_save_name)
     
     def validate(self, model, x_val, y_val, metrics):
         predict_y = model.predict(x_val)

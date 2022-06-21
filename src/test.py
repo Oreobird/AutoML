@@ -19,9 +19,9 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-CFG_FILE_PATH = 'E:/data-mining/AutoML/config/'
-DATA_FILE_PATH = 'E:/data-mining/AutoML/data/'
-MODEL_FILE_PATH = 'E:/data-mining/AutoML/model/'
+CFG_FILE_PATH = '../config/'
+DATA_FILE_PATH = '../data/'
+MODEL_FILE_PATH = '../model/'
 
 def cfg_parser_test():
     cfg = config_parser.CfgParser(os.path.join(CFG_FILE_PATH, 'config_template.ini'))
@@ -169,10 +169,14 @@ def binary_model_train_test():
     cfg = config_parser.CfgParser(os.path.join(CFG_FILE_PATH, 'binary_config.ini'))
     metric_list, model_label_list = cfg.parse_metrics_models()
     meta_model_label = cfg.parse_meta_models()
+    if len(meta_model_label) > 0:
+        meta_model_label = meta_model_label[0]
+    else:
+        meta_model_label = None
     automl = automl_base.AutoML(model_save_path=os.path.join(MODEL_FILE_PATH, 'titanic_models/'))
     
     X_train, X_val, Y_train, Y_val, X_test = binary_model_data_prepare()
-    model = automl.train(X_train, Y_train, metric_list, model_label_list, meta_model_label[0], 'titanic_model.pkl', K=3)
+    model = automl.train(X_train, Y_train, metric_list, model_label_list, meta_model_label, 'titanic_model.pkl', K=3)
     
 def binary_model_predict_test():
     cfg = config_parser.CfgParser(os.path.join(CFG_FILE_PATH, 'binary_config.ini'))

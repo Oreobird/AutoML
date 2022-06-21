@@ -56,7 +56,7 @@ cfg_dict = {'binary':   ['binary_clf_metrics',  'clf_models',       'meta_models
             'cluster':  ['cluster_models',      'cluster_models',   None,           ClusterChecker()]}
 
 
-class CfgParser():
+class CfgParser:
     def __init__(self, cfg_file):
         self.__parser = configparser.ConfigParser()
         self.__parser.read(cfg_file)
@@ -66,9 +66,7 @@ class CfgParser():
         self.base_parser = BaseParser(parser=self.__parser, type_checker=type_checker)
         
     def __parse_type(self):
-        model_type = 'binary'
-        model_type = self.__parser.get('basic', 'model_type')
-        return model_type
+        return self.__parser.get('basic', 'model_type')
 
     def parse_metrics(self):
         metric_item = cfg_dict[self.model_type][0]
