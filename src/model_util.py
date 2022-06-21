@@ -121,7 +121,7 @@ class RandomForestClsModel(ModelBase):
 @register_obj('xgboost')
 class XGBClsModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = xgboost.XGBClassifier()
+        ModelBase.obj = xgboost.XGBClassifier(eval_metric=['logloss', 'auc'])
         ModelBase.param_space = {'max_depth': range(4, 12, 2),
                                 'learning_rate': [x / 10.0 for x in range(1, 10, 2)],
                                 'n_estimators': range(50, 100, 20)}
