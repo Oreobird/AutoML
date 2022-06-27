@@ -1,7 +1,5 @@
 # !/usr/bin/env python
 # -*- coding:utf-8 -*-
-# date: 2019/3/15
-# author: zgs
 
 import configparser
 

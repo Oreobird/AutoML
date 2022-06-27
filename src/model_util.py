@@ -36,35 +36,21 @@ import joblib
 #
 # from pyspark.ml.classification import LogisticRegression
 
+class ModelProperty:
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __get__(self, obj, type=None) -> object:
+        return obj.__dict__.get(self.name) or None
+
+    def __set__(self, obj, value) -> None:
+        obj.__dict__[self.name] = value
+
 class ModelBase:
     def __init__(self):
-        self.__name = None
-        self.__obj = None
-        self.__param_space = {}
-
-    @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, name):
-        self.__name = name
-
-    @property
-    def obj(self):
-        return self.__obj
-
-    @obj.setter
-    def obj(self, obj):
-        self.__obj = obj
-
-    @property
-    def param_space(self):
-        return self.__param_space
-
-    @param_space.setter
-    def param_space(self, param_dict):
-        self.__param_space = param_dict
+        self.__name = ModelProperty()
+        self.__obj = ModelProperty()
+        self.__param_space = ModelProperty()
 
 @register_obj('lr')
 class LRModel(ModelBase):

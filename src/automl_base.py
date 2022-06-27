@@ -1,18 +1,13 @@
 # !/usr/bin/env python
 # -*- coding:utf-8 -*-
-# date: 2019/3/15
-# author: zgs
 
 import os
-import numpy as np
 from sklearn import model_selection
 from sklearn.ensemble import StackingClassifier
 from sklearn.model_selection import GridSearchCV
 
 import metric_util as mtutil
 import model_util as mdutil
-
-import lightgbm
 
 class BaseAutoML:
     def __init__(self, model_util=mdutil.ModelUtil(), model_save_path='./'):

@@ -1,18 +1,14 @@
 # !/usr/bin/env python
 # -*- coding:utf-8 -*-
-# date: 2019/3/15
-# author: zgs
 
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 import config_parser
 import automl_base
 from sklearn.preprocessing import StandardScaler
-from IPython.display import display
 import pandas as pd
 import numpy as np
 import seaborn as sns
-import matplotlib
 import os
 import matplotlib.pyplot as plt
 import warnings
