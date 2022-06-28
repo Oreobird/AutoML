@@ -36,27 +36,33 @@ import joblib
 #
 # from pyspark.ml.classification import LogisticRegression
 
-class ModelProperty:
-    def __set_name__(self, owner, name):
-        self.name = name
-
-    def __get__(self, obj, type=None) -> object:
-        return obj.__dict__.get(self.name) or None
-
-    def __set__(self, obj, value) -> None:
-        obj.__dict__[self.name] = value
-
 class ModelBase:
     def __init__(self):
-        self.__name = ModelProperty()
-        self.__obj = ModelProperty()
-        self.__param_space = ModelProperty()
+        self.__obj = None
+        self.__param_space = {}
+
+    @property
+    def obj(self):
+        return self.__obj
+
+    @obj.setter
+    def obj(self, value=None):
+        self.__obj = value
+
+    @property
+    def param_space(self):
+        return self.__param_space
+
+    @param_space.setter
+    def param_space(self, value=None):
+        self.__param_space = value
 
 @register_obj('lr')
 class LRModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = LogisticRegression(multi_class='auto', solver='lbfgs', penalty='l2', verbose=0)
-        ModelBase.param_space = {'C': [x / 10.0 for x in range(1, 50, 5)],
+        super(LRModel, self).__init__()
+        self.obj = LogisticRegression(multi_class='auto', solver='lbfgs', penalty='l2', verbose=0)
+        self.param_space = {'C': [x / 10.0 for x in range(1, 50, 5)],
                                   'max_iter': [50, 100, 500],
                                   'multi_class': ['auto'],
                                   'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'],
@@ -65,8 +71,9 @@ class LRModel(ModelBase):
 @register_obj('decisiontree')
 class DecisionTreeClsModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = DecisionTreeClassifier()
-        ModelBase.param_space = {'max_depth': range(2, 8, 1),
+        super(LRModel, self).__init__()
+        self.obj = DecisionTreeClassifier()
+        self.param_space = {'max_depth': range(2, 8, 1),
                                'min_samples_split': [x / 10.0 for x in range(1, 5, 2)],
                                'min_samples_leaf': [x / 10.0 for x in range(1, 5, 2)],
                                'min_weight_fraction_leaf': [x / 10.0 for x in range(0, 5, 2)],
@@ -75,27 +82,31 @@ class DecisionTreeClsModel(ModelBase):
 @register_obj('gaussiannb')
 class GaussianNBModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = GaussianNB()
-        ModelBase.param_space = {}
+        super(LRModel, self).__init__()
+        self.obj = GaussianNB()
+        self.param_space = {}
 
 @register_obj('svm')
 class SVMModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = SVC(gamma='scale')
-        ModelBase.param_space = {'C': [x / 10.0 for x in range(1, 20, 5)]}
+        super(LRModel, self).__init__()
+        self.obj = SVC(gamma='scale')
+        self.param_space = {'C': [x / 10.0 for x in range(1, 20, 5)]}
 
 @register_obj('knn')
 class KNNModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = KNeighborsClassifier()
-        ModelBase.param_space = {'n_neighbors': range(2, 10, 2),
+        super(LRModel, self).__init__()
+        self.obj = KNeighborsClassifier()
+        self.param_space = {'n_neighbors': range(2, 10, 2),
                                'leaf_size': range(10, 50, 5)}
 
 @register_obj('randomforest')
 class RandomForestClsModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = RandomForestClassifier(n_estimators=10, random_state=1)
-        ModelBase.param_space = {'n_estimators': range(10, 200, 10),
+        super(LRModel, self).__init__()
+        self.obj = RandomForestClassifier(n_estimators=10, random_state=1)
+        self.param_space = {'n_estimators': range(10, 200, 10),
                                 'max_depth': range(2, 8, 1),
                                 'min_samples_split': [x / 10.0 for x in range(1, 5, 2)],
                                 'min_samples_leaf': [x / 10.0 for x in range(1, 5, 2)],
@@ -107,23 +118,26 @@ class RandomForestClsModel(ModelBase):
 @register_obj('xgboost')
 class XGBClsModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = xgboost.XGBClassifier(eval_metric=['logloss', 'auc'])
-        ModelBase.param_space = {'max_depth': range(4, 12, 2),
+        super(LRModel, self).__init__()
+        self.obj = xgboost.XGBClassifier(eval_metric=['logloss', 'auc'])
+        self.param_space = {'max_depth': range(4, 12, 2),
                                 'learning_rate': [x / 10.0 for x in range(1, 10, 2)],
                                 'n_estimators': range(50, 100, 20)}
 
 @register_obj('lgbm')
 class LGBMClsModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = lightgbm.LGBMClassifier()
-        ModelBase.param_space = {'num_leaves': range(2, 10, 2),
+        super(LRModel, self).__init__()
+        self.obj = lightgbm.LGBMClassifier()
+        self.param_space = {'num_leaves': range(2, 10, 2),
                                  'max_depth': range(2, 6, 2)}
 
 @register_obj('k-means')
 class KMeansModel(ModelBase):
     def __init__(self):
-        ModelBase.obj = KMeans()
-        ModelBase.param_space = {'n_clusters': range(2, 20, 2),
+        super(LRModel, self).__init__()
+        self.obj = KMeans()
+        self.param_space = {'n_clusters': range(2, 20, 2),
                                    'n_init': range(4, 20, 2),
                                    'max_iter': range(200, 400, 100)}
 
